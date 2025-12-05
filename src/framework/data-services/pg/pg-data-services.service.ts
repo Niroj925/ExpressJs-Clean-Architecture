@@ -47,15 +47,8 @@ export class PgDataServices implements IDataServices {
     }
   }
 
-  /** Query Builder Helper */
-  qb<T extends ObjectLiteral>(
-    entity: new () => T,
-    alias: string,
-    manager?: EntityManager
-  ): SelectQueryBuilder<T> {
-    return (manager ?? this.dataSource.manager).createQueryBuilder(
-      entity,
-      alias
-    );
-  }
+  qb<T>(entity: new () => T, alias: string, manager?: EntityManager) {
+  return (manager ?? this.dataSource.manager).createQueryBuilder(entity, alias);
+}
+
 }

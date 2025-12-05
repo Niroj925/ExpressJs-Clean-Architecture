@@ -1,7 +1,6 @@
 
 import { IPaginationData } from 'common/interface/response/interface/response-data.interface';
 import { RelationType } from 'common/type/relation';
-import { EntityManager } from 'typeorm';
 export type keyValueObj = {
   [key: string]: any;
 };
@@ -22,7 +21,7 @@ export abstract class IGenericRepository<T> {
     order?: keyValueObj,
     select?: keyValueObj,
     take?: number | undefined,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<IPaginationData>;
 
   abstract getAllWithCustomPagination(
@@ -32,7 +31,7 @@ export abstract class IGenericRepository<T> {
     select: NonNullable<unknown>,
     page: number,
     limit: number,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<IPaginationData>;
 
   abstract getAllWithoutPagination(
@@ -40,60 +39,60 @@ export abstract class IGenericRepository<T> {
     relations?: RelationType,
     order?: keyValueObj,
     select?: keyValueObj,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T[]>;
 
   abstract getOne(
     condition: keyValueObj,
     relations?: RelationType,
     select?: keyValueObj,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T>;
 
   abstract getOneOrNull(
     condition: keyValueObj | any[],
     relations?: RelationType,
     methodOptions?: OtherMethodOptions,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T>;
 
-  abstract create(item: T, manager?: EntityManager): Promise<T>;
+  abstract create(item: T, manager?: unknown): Promise<T>;
 
   abstract update(
     condition: keyValueObj,
     item: T,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T>;
 
   abstract findOrCreate(
     condition: keyValueObj,
     item: T,
     relations?: RelationType,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T>;
 
   abstract createOrUpdate(
     condition: keyValueObj,
     item: T,
     relations?: RelationType,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<T>;
 
   abstract checkIfExists(condition: keyValueObj): Promise<boolean>;
 
-  abstract createBulk(items: T[], manager?: EntityManager): Promise<T[]>;
+  abstract createBulk(items: T[], manager?: unknown): Promise<T[]>;
 
   abstract updateMany(condition: keyValueObj, item: keyValueObj): Promise<any>;
 
   abstract remove(
     condition: keyValueObj,
     relations?: RelationType,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<any>;
 
   abstract delete(
     condition: keyValueObj,
     relations?: RelationType,
-    manager?: EntityManager,
+    manager?: unknown,
   ): Promise<any>;
 }

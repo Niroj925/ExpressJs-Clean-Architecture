@@ -276,6 +276,7 @@ export class PgGenericRepository<T extends ObjectLiteral> implements IGenericRep
     });
   }
 
+
   async createBulk(items: T[], manager?: EntityManager): Promise<T[]> {
     return rescue<T[]>(async (): Promise<T[]> => {
       const repo = this.getRepo(manager);

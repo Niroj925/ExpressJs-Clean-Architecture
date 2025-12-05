@@ -11,7 +11,6 @@ export class UserUseCaseService {
     private readonly authFactory: AuthFactory
   ) {}
 
-  // CREATE USER
   async createUser(dto: CreateUserDto) {
     return await this.dataServices.handleTransaction(async (manager) => {
       const userModel = this.userFactory.createUser(dto);
@@ -25,27 +24,21 @@ export class UserUseCaseService {
     });
   }
 
-  // GET SINGLE USER BY ID
   async getUser(id: string) {
     const user = await this.dataServices.user.getOne({ id });
 
     if (!user) {
-      // throw new Error("User not found");
       console.log('user not found')
     }
 
     return user;
   }
 
-  // GET ALL USERS (Supports Pagination)
   async getUsers(options: { page?: number; limit?: number } = {}) {
     const { page = 1, limit = 10 } = options;
-
-    // Prefer a repository-level pagination method when page is provided
     if (
       typeof this.dataServices.user.getAllWithCustomPagination === "function"
     ) {
-      // @ts-ignore - some concrete implementations provide this method
       return await this.dataServices.user.getAllWithCustomPagination(
         {},
         {},
@@ -56,19 +49,17 @@ export class UserUseCaseService {
       );
     }
 
-    // Fallback to the simpler getAll which supports `take` (limit)
     return await this.dataServices.user.getAll(
-      {}, // condition (empty = all)
-      {}, // relations
-      {}, // order
-      undefined, // select
-      limit // pagination size
+      {}, 
+      {}, 
+      {}, 
+      undefined, 
+      limit 
     );
   }
 
-  // DELETE USER
   async deleteUser(id: string) {
-    const user = await this.getUser(id); // will throw if not found
-    // return await this.dataServices.user.delete({ id: user.id });
+   await this.dataServices.user.delete({id});
+   return true
   }
 }

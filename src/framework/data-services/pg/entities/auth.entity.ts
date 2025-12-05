@@ -10,7 +10,7 @@ export class AuthEntity extends BaseEntity{
   @Column()
   password: string;
 
-  @OneToOne(()=>UserEntity,(user)=>user.auth)
+  @OneToOne(()=>UserEntity,(user)=>user.auth,{onDelete:'CASCADE'})
   @JoinColumn({name:'userId'})
   user:UserEntity;
 }
