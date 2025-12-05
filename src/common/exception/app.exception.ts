@@ -1,26 +1,28 @@
 import { IError } from '../type/iError';
 import { BaseException } from './base.exception';
+import { ValidationError } from 'class-validator';
 
 export default class AppException extends BaseException {
   constructor(
     appErrors: IError | string = {},
     message: string = 'Invalid data',
-    status: number = 400,
+    statusCode: number = 400
   ) {
     if (typeof appErrors === 'string') {
-      super([], appErrors, status);
+      // Convert string error to ValidationError[] format
+      super([], appErrors, statusCode);
       return;
     }
-    const errorsMessages = Object.keys(appErrors).map((key) => {
-      return {
-        target: { key },
-        property: key,
-        constraints: {
-          key: appErrors[key],
-        },
-        value: key,
-      };
-    });
-    super(errorsMessages, message, status);
+
+    // Convert IError to ValidationError[] format
+    const errors: ValidationError[] = Object.keys(appErrors).map((key) => ({
+      target: {},
+      property: key,
+      constraints: { key: appErrors[key] },
+      children: [],
+      value: key,
+    }));
+
+    super(errors, message, statusCode);
   }
 }

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { UserUseCaseService } from 'application/use-cases/user/user-use-case.service';
 import { CoreApiResponse } from 'presentation/api/core-api-response';
 import { CreateUserDto } from 'presentation/dto/request/user.dto';
+import { AuthGuard } from 'common/guards/auth.guard';
 
 export class UserController {
   constructor(private readonly userService: UserUseCaseService) {}
@@ -16,6 +17,7 @@ export class UserController {
     }
   }
 
+  @AuthGuard()
   async getUsers(req: Request, res: Response, next: NextFunction) {
     try {
       const page = parseInt(req.query.page as string) || 1;

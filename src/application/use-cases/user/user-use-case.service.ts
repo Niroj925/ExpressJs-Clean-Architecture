@@ -1,9 +1,9 @@
-
 import { CreateUserDto } from "presentation/dto/request/user.dto";
 import UserFactory from "./user-factory-use-case.service";
 import AuthFactory from "../auth/auth-factory-use.case.service";
 import { IDataServices } from "core/abstracts";
-
+import { hashString } from "common/utils/hash";
+import AppException from "common/exception/app.exception";
 export class UserUseCaseService {
   constructor(
     private readonly dataServices: IDataServices,
@@ -18,6 +18,7 @@ export class UserUseCaseService {
 
       const authModel = this.authFactory.createUserAuth({
         ...dto,
+        password: await hashString(dto.password),
         user: user?.id,
       });
       return await this.dataServices.auth.create(authModel, manager);
@@ -28,7 +29,8 @@ export class UserUseCaseService {
     const user = await this.dataServices.user.getOne({ id });
 
     if (!user) {
-      console.log('user not found')
+      console.log("user not found");
+      throw new AppException({ message: "Not Found" }, "user not found", 403);
     }
 
     return user;
@@ -49,17 +51,11 @@ export class UserUseCaseService {
       );
     }
 
-    return await this.dataServices.user.getAll(
-      {}, 
-      {}, 
-      {}, 
-      undefined, 
-      limit 
-    );
+    return await this.dataServices.user.getAll({}, {}, {}, undefined, limit);
   }
 
   async deleteUser(id: string) {
-   await this.dataServices.user.delete({id});
-   return true
+    await this.dataServices.user.delete({ id });
+    return true;
   }
 }

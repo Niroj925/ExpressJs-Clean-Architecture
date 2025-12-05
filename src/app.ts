@@ -11,6 +11,7 @@ dotenv.config();
 
 import { initializeDataSource } from "common/config/datasource";
 import { setupSwagger } from "swagger";
+import { errorHandler } from "presentation/middleware/error-handler";
 
 const PORT = process.env.PORT || 4040;
 const RATE_TIME_LIMIT = Number(process.env.RATE_TIME_LIMIT) || 15;
@@ -26,7 +27,7 @@ app.use(
   rateLimit({
     windowMs: RATE_TIME_LIMIT * 60 * 1000,
     max: RATE_REQUEST_LIMIT,
-  }),
+  })
 );
 
 app.use(cors());
@@ -35,7 +36,6 @@ app.use(helmet());
 
 app.use(hpp());
 
-
 // Initialize data source first, then import routes so routers can use DB services
 (async () => {
   try {
@@ -43,15 +43,17 @@ app.use(hpp());
     if (initialized) {
       console.log("Data Source has been initialized!");
     } else {
-      console.log("Data Source not initialized; running with in-memory services");
+      console.log(
+        "Data Source not initialized; running with in-memory services"
+      );
     }
 
     const routes = (await import("./presentation/router/index")).default;
 
     app.use("/api", routes);
-
+    app.use(errorHandler);
     setupSwagger(app);
-    
+
     app.listen(PORT, () => {
       console.log(`Server is listening on port: ${PORT}`);
     });

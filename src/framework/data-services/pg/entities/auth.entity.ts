@@ -2,15 +2,18 @@ import { Entity, Column, OneToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "./base/base.entity";
 import { UserEntity } from "./user.entity";
 
-@Entity('auth')
-export class AuthEntity extends BaseEntity{
+@Entity("auth")
+export class AuthEntity extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
 
-  @OneToOne(()=>UserEntity,(user)=>user.auth,{onDelete:'CASCADE'})
-  @JoinColumn({name:'userId'})
-  user:UserEntity;
+  @Column({ nullable: true })
+  refreshToken: string;
+
+  @OneToOne(() => UserEntity, (user) => user.auth, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
+  user: UserEntity;
 }
