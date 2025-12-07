@@ -4,13 +4,13 @@ import { UserEntity } from "./user.entity";
 
 @Entity("auth")
 export class AuthEntity extends BaseEntity {
-  @Column({ unique: true })
+  @Column({name:'email', unique: true })
   email: string;
 
-  @Column()
+  @Column({name:'password'})
   password: string;
 
-  @Column({ nullable: true })
+  @Column({name:'refresh_token', nullable: true })
   refreshToken: string;
 
   @OneToOne(() => UserEntity, (user) => user.auth, { onDelete: "CASCADE" })

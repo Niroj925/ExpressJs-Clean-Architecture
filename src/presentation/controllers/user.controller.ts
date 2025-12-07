@@ -17,7 +17,7 @@ export class UserController {
     }
   }
 
-  @AuthGuard()
+  
   async getUsers(req: Request, res: Response, next: NextFunction) {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -29,6 +29,7 @@ export class UserController {
     }
   }
 
+  @AuthGuard()
   async getUser(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await this.userService.getUser(req.params.id);

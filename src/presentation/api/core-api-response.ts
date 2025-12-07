@@ -16,6 +16,20 @@ export abstract class CoreApiResponse {
       message,
     });
   }
+
+static error(
+  statusCode: number = 400,
+  message: string = 'Error',
+  error?: any 
+) {
+  return new AppResponse({
+    statusCode,
+    message,
+    error,
+    data: {},
+  });
+}
+
   static pagination(
     paginationData: IPaginationData,
     query: IPaginationQuery,
