@@ -41,6 +41,7 @@
     "redis": "^5.10.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3",
+    "technicalindicators": "^3.1.0",
     "typeorm": "^0.3.27",
     "xss": "^1.0.14"
   },

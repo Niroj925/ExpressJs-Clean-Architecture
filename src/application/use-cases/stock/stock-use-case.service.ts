@@ -4,10 +4,15 @@ import StockFactory from "./stock-factory-use-case.service";
 import axios from "axios";
 import { IConfigService } from "core/interface/config.interface";
 import StockInfoModel from "core/models/stock-info.model";
-import { CreateStockInfoDto } from "presentation/dto/request/stock.dto";
+import {
+  CreateStockInfoDto,
+  IndicatorRequestDto,
+} from "presentation/dto/request/stock.dto";
 import StockPriceModel from "core/models/stock-price.model";
 import { capitalize } from "common/utils/capitalize";
 import { LessThan } from "typeorm";
+import { calculateIndicatorFromHistory } from "common/utils/getIndicatorResult";
+import { IndicatorOptionsMap } from "common/interface/indicator.interface";
 export class StockUseCaseService {
   constructor(
     private readonly dataServices: IDataServices,
@@ -83,7 +88,7 @@ export class StockUseCaseService {
       });
 
       // 4️⃣ Insert this page into Postgres
-    //   await this.dataServices.stockPrice.createBulk(stockPriceObjects);
+      //   await this.dataServices.stockPrice.createBulk(stockPriceObjects);
 
       console.log(
         `Inserted page ${page + 1}/${totalPages}, records: ${
@@ -167,15 +172,25 @@ export class StockUseCaseService {
     return await this.dataServices.user.getAll({}, {}, {}, undefined, limit);
   }
 
+  async getIndicatorBasedResult(dto: IndicatorRequestDto) {
+    const data = await this.getStockBySymbol(capitalize(dto.symbol));
 
-async deleteStockPriceBefore() {
-  const cutoff = new Date('2025-01-01');
+    const result = await calculateIndicatorFromHistory(
+      capitalize(dto.indicator) as keyof IndicatorOptionsMap,
+      data,
+      dto.options || {}
+    );
 
-  return await this.dataServices.stockPrice.delete({
-    date: LessThan(cutoff),
-  });
-}
+    return result;
+  }
 
+  async deleteStockPriceBefore() {
+    const cutoff = new Date("2025-01-01");
+
+    return await this.dataServices.stockPrice.delete({
+      date: LessThan(cutoff),
+    });
+  }
 
   async upsertStock(stock: StockInfoModel) {
     const existing = await this.dataServices.stockInfo.getOneOrNull({

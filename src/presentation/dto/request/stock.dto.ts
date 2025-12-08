@@ -1,4 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsDateString } from "class-validator";
+import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, IsObject } from "class-validator";
+import { IndicatorOptionsMap } from "common/interface/indicator.interface";
 
 export class CreateStockInfoDto {
   @IsString()
@@ -87,4 +88,71 @@ export class CreateStockPriceDto {
 
   @IsDateString()
   date: Date;
+}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     IndicatorRequestDto:
+ *       type: object
+ *       required:
+ *         - symbol
+ *         - indicator
+ *       properties:
+ *         symbol:
+ *           type: string
+ *           description: Stock symbol (e.g. SPDL, BTCUSDT, AAPL)
+ *           example: "SPDL"
+ *         indicator:
+ *           type: string
+ *           description: Name of technical indicator
+ *           enum:
+ *             - SMA
+ *             - EMA
+ *             - WMA
+ *             - WEMA
+ *             - TRIX
+ *             - VWAP
+ *             - IchimokuCloud
+ *             - RSI
+ *             - Stochastic
+ *             - StochasticRSI
+ *             - WilliamsR
+ *             - ROC
+ *             - CCI
+ *             - ATR
+ *             - BollingerBands
+ *             - PSAR
+ *             - OBV
+ *             - ADL
+ *             - MFI
+ *             - FI
+ *             - VP
+ *             - ADX
+ *             - MACD
+ *           example: "RSI"
+ *         options:
+ *           type: object
+ *           description: Indicator configuration options (optional)
+ *           example:
+ *             period: 14
+ *             stdDev: 2
+ *           additionalProperties: true
+ */
+export class IndicatorRequestDto {
+  
+  @IsString()
+  symbol: string;
+
+  @IsEnum([
+    "SMA","EMA","WMA","WEMA","TRIX","VWAP","IchimokuCloud","RSI","Stochastic",
+    "StochasticRSI","WilliamsR","ROC","CCI","ATR","BollingerBands","PSAR","OBV",
+    "ADL","MFI","FI","VP","ADX","MACD"
+  ] as const)
+  indicator: keyof IndicatorOptionsMap;
+
+  @IsOptional()
+  @IsObject()
+  options?: Partial<IndicatorOptionsMap[keyof IndicatorOptionsMap]>;
 }

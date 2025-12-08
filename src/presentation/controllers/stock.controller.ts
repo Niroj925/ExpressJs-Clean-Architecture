@@ -1,6 +1,8 @@
 import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
+import { validateOrReject } from "class-validator";
 import { Request, Response, NextFunction } from "express";
 import { CoreApiResponse } from "presentation/api/core-api-response";
+import { IndicatorRequestDto } from "presentation/dto/request/stock.dto";
 
 export class StockController {
   constructor(private readonly stockService: StockUseCaseService) {}
@@ -159,6 +161,22 @@ export class StockController {
       return next(err);
     }
   }
+
+   async getIndicatorBasedResult(req: Request, res: Response, next: NextFunction) {
+  try {
+    const dto = Object.assign(new IndicatorRequestDto(), req.body);
+    // await validateOrReject(dto); 
+
+    const stock = await this.stockService.getIndicatorBasedResult(dto);
+
+    return res.status(200).json(
+      CoreApiResponse.success(stock, 200, `Indicator based result fetched successfully`)
+    );
+
+  } catch (err) {
+    return next(err);
+  }
+}
 
   async insertStockPrice(req: Request, res: Response, next: NextFunction) {
     try {

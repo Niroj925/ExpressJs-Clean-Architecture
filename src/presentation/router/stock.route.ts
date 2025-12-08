@@ -192,6 +192,29 @@ router.delete(
 );
 
 
+/**
+ * @swagger
+ * /stock/indicator-based-calculation:
+ *   post:
+ *     summary: Calculate technical indicator based calculation
+ *     tags: [Stock]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/IndicatorRequestDto'
+ *     responses:
+ *       200:
+ *         description: Indicator result fetched successfully
+ */
+
+router.post(
+  "/indicator-based-calculation",
+  asyncHandler(controller.getIndicatorBasedResult.bind(controller))
+);
+
+
 
   return router;
 };
