@@ -128,7 +128,7 @@ export class StockUseCaseService {
 
   async getStockBySymbol(symbol: string) {
     return await this.dataServices.stockPrice.getAllWithoutPagination({
-      symbol,
+      symbol: capitalize(symbol),
     });
   }
 
