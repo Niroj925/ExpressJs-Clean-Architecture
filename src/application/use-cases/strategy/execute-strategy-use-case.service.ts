@@ -1,6 +1,6 @@
 // src/application/use-cases/ExecuteStrategyUseCase.ts
 
-import { StrategyTokenType } from "core/constant";
+import { StrategyTokenType } from "common/constant/strategy-key.constant";
 import { StrategyResult } from "core/interface/strategy.interface";
 import { IStrategyRepository } from "core/repository/strategy.repository";
 

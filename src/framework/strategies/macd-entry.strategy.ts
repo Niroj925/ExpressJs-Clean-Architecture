@@ -1,53 +1,51 @@
 // src/infrastructure/strategies/MacdEntryStrategy.ts
+import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
+import { StrategyResult } from "core/interface/strategy.interface";
+import { BaseStrategy } from "./base/base-strategy";
 
-import { IStrategy, StrategyResult } from "core/interface/strategy.interface";
+export class MacdEntryStrategy extends BaseStrategy {
+  constructor(stockService: StockUseCaseService) {
+    super(stockService);
+  }
 
-export class MacdEntryStrategy implements IStrategy {
   getName(): string {
     return "MACD Entry Strategy";
   }
 
-  async execute(ticker: string): Promise<StrategyResult> {
-    try {
-      console.log(`Executing MACD strategy for ${ticker}`);
-      
-      // Your MACD logic here - fetch data, calculate MACD
-      const macdData = await this.calculateMACD(ticker);
-      
-      let signal: "BUY" | "SELL" | "HOLD" = "HOLD";
-      if (macdData.histogram > 0) {
-        signal = "BUY";
-      } else if (macdData.histogram < 0) {
-        signal = "SELL";
-      }
+  protected async executeStrategy(
+    ticker: string,
+    stockData: any
+  ): Promise<StrategyResult> {
+    // Calculate MACD indicator
+    const macdData = await this.calculateIndicator("MACD", stockData, {});
 
-      return {
-        success: true,
-        signal,
-        data: { ...macdData, ticker },
-        message: `MACD analysis complete for ${ticker}`,
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `MACD strategy failed: ${error}`,
-        timestamp: new Date(),
-      };
-    }
-  }
+    // Extract MACD components (adjust based on your calculateIndicator response)
+    const macdLine = macdData?.MACD || [];
+    const signalLine = macdData?.signal || [];
+    const histogram = macdData?.histogram || [];
 
-  private async calculateMACD(ticker: string): Promise<{
-    macd: number;
-    signal: number;
-    histogram: number;
-  }> {
-    // Implement your MACD calculation logic
-    // Fetch historical data, calculate MACD lines
-    return {
-      macd: Math.random(),
-      signal: Math.random(),
-      histogram: Math.random() - 0.5,
-    };
+    // Get latest values
+    const latestMacd = macdLine[macdLine.length - 1] || 0;
+    const latestSignal = signalLine[signalLine.length - 1] || 0;
+    const latestHistogram = histogram[histogram.length - 1] || 0;
+
+    // Generate signal based on MACD crossover
+    const signal = this.generateSignal({
+      buy: latestHistogram > 0 && latestMacd > latestSignal,
+      sell: latestHistogram < 0 && latestMacd < latestSignal,
+    });
+
+    return this.createSuccessResult(
+      signal,
+      {
+        latestMacd,
+        latestSignal,
+        latestHistogram,
+        macdLine,
+        signalLine,
+        histogram,
+      },
+      ticker
+    );
   }
 }

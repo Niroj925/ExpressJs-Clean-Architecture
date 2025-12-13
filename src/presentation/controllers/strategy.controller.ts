@@ -1,6 +1,6 @@
 
 import { ExecuteStrategyUseCase } from "application/use-cases/strategy/execute-strategy-use-case.service";
-import { StrategyTokenType } from "core/constant";
+import { StrategyTokenType } from "common/constant/strategy-key.constant";
 import { Request, Response, NextFunction } from "express";
 import { CoreApiResponse } from "presentation/api/core-api-response";
 

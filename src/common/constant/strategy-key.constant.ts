@@ -1,4 +1,4 @@
-// src/domain/enums/StrategyToken.ts
+
 export const StrategyToken = {
   RSI_ENTRY: "RSI_ENTRY",
   MACD_ENTRY: "MACD_ENTRY",
