@@ -1,11 +1,12 @@
-// src/infrastructure/strategies/BollingerEntryStrategy.ts
-import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
 import { StrategyResult } from "core/interface/strategy.interface";
 import { BaseStrategy } from "./base/base-strategy";
+import { mergeIndicatorsByCandle } from "common/utils/merge-indicator";
+import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
+import { BollingerEntrySignalRule } from "framework/signal/bolinger.signal";
 
 export class BollingerEntryStrategy extends BaseStrategy {
   constructor(stockService: StockUseCaseService) {
-    super(stockService);
+    super(stockService, new BollingerEntrySignalRule());
   }
 
   getName(): string {
@@ -14,42 +15,34 @@ export class BollingerEntryStrategy extends BaseStrategy {
 
   protected async executeStrategy(
     ticker: string,
-    stockData: any
+    stockData: any[]
   ): Promise<StrategyResult> {
-    // Calculate Bollinger Bands
-    const bollingerData = await this.calculateIndicator('BollingerBands', stockData, {
-      period: 20,
-      stdDev: 2,
-    });
-
-    const upperBand = bollingerData?.upper || [];
-    const middleBand = bollingerData?.middle || [];
-    const lowerBand = bollingerData?.lower || [];
-
-    // Get latest price and bands
-    const latestPrice = stockData.close[stockData.close.length - 1];
-    const latestUpper = upperBand[upperBand.length - 1];
-    const latestLower = lowerBand[lowerBand.length - 1];
-    const latestMiddle = middleBand[middleBand.length - 1];
-
-    // Generate signal
-    const signal = this.generateSignal({
-      buy: latestPrice <= latestLower, // Price touches or breaks lower band
-      sell: latestPrice >= latestUpper, // Price touches or breaks upper band
-    });
-
-    return this.createSuccessResult(
-      signal,
-      {
-        latestPrice,
-        latestUpper,
-        latestMiddle,
-        latestLower,
-        upperBand,
-        middleBand,
-        lowerBand,
-      },
-      ticker
+    // 1️⃣ Calculate Bollinger Bands
+    const bbResults = await this.calculateIndicator(
+      "BollingerBands",
+      stockData,
+      { period: 20, stdDev: 2 }
     );
+
+    // 2️⃣ Extract Bollinger Bands components from the indicator structure
+    const upperData = bbResults.map(
+      (item) => item.indicator.indicatorValue.upper ?? null
+    );
+    const middleData = bbResults.map(
+      (item) => item.indicator.indicatorValue.middle ?? null
+    );
+    const lowerData = bbResults.map(
+      (item) => item.indicator.indicatorValue.lower ?? null
+    );
+
+    // 3️⃣ Merge OHLCV + Bollinger Bands
+    const candles = await mergeIndicatorsByCandle(stockData, [
+      { name: "BB_UPPER", data: upperData },
+      { name: "BB_MIDDLE", data: middleData },
+      { name: "BB_LOWER", data: lowerData },
+    ]);
+
+    // 3️⃣ Delegate signal generation
+    return this.createResult(candles, ticker);
   }
 }

@@ -1,16 +1,46 @@
-// src/domain/entities/StrategyResult.ts
+import { TradeSignal } from "common/enums/signal.enum";
+import { CandleSignal } from "./signal-rule.interface";
+
 export interface StrategyResult {
-  success: boolean;
-  signal?: "BUY" | "SELL" | "HOLD";
-  data?: any;
+  date: string | Date;
+
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+
+  signal: TradeSignal;
+
   message?: string;
-  timestamp: Date;
+  indicators?:any
 }
 
-// // src/domain/interfaces/IStrategy.ts
-// import { StrategyResult } from "../entities/StrategyResult";
+
+export interface CandleIndicator {
+  name: string;     
+  value: number;     
+}
+
+export interface IndicatorCandle {
+  date: string | Date;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  indicators: CandleIndicator[];
+}
+
+
 
 export interface IStrategy {
   execute(ticker: string): Promise<StrategyResult>;
   getName(): string;
+}
+
+export interface BacktestResult {
+  candles: IndicatorCandle[];  
+  signals: CandleSignal[];     
+  ticker: string;
 }

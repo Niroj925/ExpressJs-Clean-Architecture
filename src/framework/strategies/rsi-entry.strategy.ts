@@ -1,11 +1,12 @@
-// src/infrastructure/strategies/RsiEntryStrategy.ts
-import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
 import { StrategyResult } from "core/interface/strategy.interface";
 import { BaseStrategy } from "./base/base-strategy";
+import { mergeIndicatorsByCandle } from "common/utils/merge-indicator";
+import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
+import { RsiEntrySignalRule } from "framework/signal/rsi-entry.signal";
 
 export class RsiEntryStrategy extends BaseStrategy {
   constructor(stockService: StockUseCaseService) {
-    super(stockService);
+    super(stockService, new RsiEntrySignalRule());
   }
 
   getName(): string {
@@ -14,34 +15,18 @@ export class RsiEntryStrategy extends BaseStrategy {
 
   protected async executeStrategy(
     ticker: string,
-    stockData: any
+    stockData: any[]
   ): Promise<StrategyResult> {
-    // Calculate RSI indicator
-    const rsiValues = await this.calculateIndicator("RSI", stockData, {});
 
-    // Filter RSI values below 30 (oversold)
-    const oversoldValues = rsiValues?.filter((value: number) => value < 30) || [];
-    const overboughtValues = rsiValues?.filter((value: number) => value > 70) || [];
-    
-    // Get latest RSI value
-    const latestRsi = rsiValues?.[rsiValues.length - 1] || 50;
-    // const latestRsi = 76;
+    // 1️⃣ Calculate RSI
+    const rsiData = await this.calculateIndicator("RSI", stockData, {});
 
-    // Generate signal
-    const signal = this.generateSignal({
-      buy: latestRsi < 30,
-      sell: latestRsi > 70,
-    });
+    // 2️⃣ Merge OHLCV + RSI into IndicatorCandle[]
+    const candles = await mergeIndicatorsByCandle(stockData, [
+      { name: "RSI", data: rsiData },
+    ]);
 
-    return this.createSuccessResult(
-      signal,
-      {
-        latestRsi,
-        oversoldValues,
-        overboughtValues,
-        allRsiValues: rsiValues,
-      },
-      ticker
-    );
+    // 3️⃣ BaseStrategy handles signal generation
+    return this.createResult(candles, ticker);
   }
 }

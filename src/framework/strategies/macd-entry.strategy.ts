@@ -1,11 +1,12 @@
-// src/infrastructure/strategies/MacdEntryStrategy.ts
-import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
 import { StrategyResult } from "core/interface/strategy.interface";
 import { BaseStrategy } from "./base/base-strategy";
+import { mergeIndicatorsByCandle } from "common/utils/merge-indicator";
+import { StockUseCaseService } from "application/use-cases/stock/stock-use-case.service";
+import { MacdEntrySignalRule } from "framework/signal/macd-entry-signal";
 
 export class MacdEntryStrategy extends BaseStrategy {
   constructor(stockService: StockUseCaseService) {
-    super(stockService);
+    super(stockService, new MacdEntrySignalRule());
   }
 
   getName(): string {
@@ -14,38 +15,24 @@ export class MacdEntryStrategy extends BaseStrategy {
 
   protected async executeStrategy(
     ticker: string,
-    stockData: any
+    stockData: any[]
   ): Promise<StrategyResult> {
-    // Calculate MACD indicator
-    const macdData = await this.calculateIndicator("MACD", stockData, {});
+    // 1️⃣ Calculate MACD
+    const macdResults = await this.calculateIndicator('MACD', stockData, {});
+  
+    // 2️⃣ Extract MACD components from the indicator structure
+    const macdData = macdResults.map(item => item.indicator.indicatorValue.MACD ?? null);
+    const signalData = macdResults.map(item => item.indicator.indicatorValue.signal ?? null);
+    const histogramData = macdResults.map(item => item.indicator.indicatorValue.histogram ?? null);
+  
+    // 3️⃣ Merge OHLCV + MACD components
+    const candles = await mergeIndicatorsByCandle(stockData, [
+      { name: "MACD", data: macdData },              
+      { name: "MACD_SIGNAL", data: signalData },     
+      { name: "MACD_HIST", data: histogramData }, 
+    ]);
 
-    // Extract MACD components (adjust based on your calculateIndicator response)
-    const macdLine = macdData?.MACD || [];
-    const signalLine = macdData?.signal || [];
-    const histogram = macdData?.histogram || [];
-
-    // Get latest values
-    const latestMacd = macdLine[macdLine.length - 1] || 0;
-    const latestSignal = signalLine[signalLine.length - 1] || 0;
-    const latestHistogram = histogram[histogram.length - 1] || 0;
-
-    // Generate signal based on MACD crossover
-    const signal = this.generateSignal({
-      buy: latestHistogram > 0 && latestMacd > latestSignal,
-      sell: latestHistogram < 0 && latestMacd < latestSignal,
-    });
-
-    return this.createSuccessResult(
-      signal,
-      {
-        latestMacd,
-        latestSignal,
-        latestHistogram,
-        macdLine,
-        signalLine,
-        histogram,
-      },
-      ticker
-    );
+    // 4️⃣ Delegate signal generation
+    return this.createResult(candles, ticker);
   }
 }

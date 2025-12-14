@@ -8,44 +8,67 @@ export async function calculateIndicatorFromHistory<
 >(
   indicatorName: I,
   data: StockPriceModel[],
-  options?: IndicatorOptionsMap[I] // Made optional
-): Promise<any> {
-
-  // 1️⃣ Prepare OHLC arrays
+  options?: IndicatorOptionsMap[I]
+): Promise<
+  Array<{
+    date: Date;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+    indicator: any;
+  }>
+> {
   const priceHistory = {
     open: data.map(d => d.open),
     high: data.map(d => d.high),
     low: data.map(d => d.low),
     close: data.map(d => d.ltp),
-    volume: data.map(d => d.volume)
+    volume: data.map(d => d.volume),
   };
 
-  // 2️⃣ Find indicator class dynamically
   const Indicator = (ti as any)[indicatorName];
-  if (!Indicator) throw new Error(`Indicator '${indicatorName}' not found`);
+  if (!Indicator) {
+    throw new Error(`Indicator '${indicatorName}' not found`);
+  }
 
-  // 3️⃣ Merge user options with defaults
   const defaultOptions = INDICATOR_DEFAULTS[indicatorName];
   const mergedOptions = { ...defaultOptions, ...options };
 
-  // 4️⃣ Build input
   const input: Record<string, any> = { ...mergedOptions };
 
-  // Map "values" automatically for indicators that need it
-  if ("values" in (ti as any)[indicatorName].prototype || 
-      indicatorName === "RSI" || 
-      indicatorName === "SMA" || 
-      indicatorName === "EMA") {
+  if (
+    "values" in Indicator.prototype ||
+    ["RSI", "SMA", "EMA"].includes(indicatorName)
+  ) {
     input.values = priceHistory.close;
   }
 
-  // Add OHLC data for indicators that need it
   if (["BollingerBands", "ATR", "ADX", "Stochastic", "MACD"].includes(indicatorName)) {
     Object.assign(input, priceHistory);
   }
 
-  // 5️⃣ Calculate
-  let result = Indicator.calculate(input);
+  const indicatorValues = Indicator.calculate(input);
+
+  const offset = data.length - indicatorValues.length;
+
+  const result = indicatorValues.map((indicatorValue: any, index: number) => {
+    const candle = data[index + offset];
+
+    return {
+      date: candle.date,
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.ltp,
+      volume: candle.volume,
+      indicator: {
+        indicatorName,
+        indicatorValue
+      }
+    };
+  });
 
   return result;
 }
