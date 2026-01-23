@@ -15,18 +15,13 @@ export class RsiEntryStrategy extends BaseStrategy {
 
   protected async executeStrategy(
     ticker: string,
-    stockData: any[]
+    stockData: any[],
   ): Promise<StrategyResult> {
-
-    // 1️⃣ Calculate RSI
     const rsiData = await this.calculateIndicator("RSI", stockData, {});
 
-    // 2️⃣ Merge OHLCV + RSI into IndicatorCandle[]
     const candles = await mergeIndicatorsByCandle(stockData, [
       { name: "RSI", data: rsiData },
     ]);
-
-    // 3️⃣ BaseStrategy handles signal generation
     return this.createResult(candles, ticker);
   }
 }

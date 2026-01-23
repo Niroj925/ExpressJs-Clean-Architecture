@@ -103,6 +103,81 @@ export class StockUseCaseService {
     };
   }
 
+ async insertStockAfterDate(dateString: string,start:string,end:string) {
+  const PAGE_SIZE = 100;
+
+  const date = new Date(dateString);
+  date.setHours(0, 0, 0, 0);
+
+  console.log('Start date:', date);
+
+  // 1️⃣ Get total records count
+  const { data: countData } = await axios.get(
+    `http://localhost:4000/stock/count-stock-after-date?date=${dateString}&start=${start}&end=${end}`,
+  );
+
+  const totalRecords = countData.total;
+  const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
+
+  console.log(`Total records: ${totalRecords}, Total pages: ${totalPages}`);
+
+  // 2️⃣ Loop page by page
+  for (let page = 0; page < totalPages; page++) {
+    const start = page * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+
+    // 3️⃣ Fetch batch
+    const { data } = await axios.get(
+      `http://localhost:4000/stock/stock-after-date`,
+      {
+        params: {
+          date: dateString,
+          start,
+          end,
+        },
+      },
+    );
+
+    const rows = data.data;
+
+    if (!rows || rows.length === 0) {
+      console.log('No more records');
+      break;
+    }
+
+    // 4️⃣ Convert
+    const stockPriceObjects = rows.map((item: any) => {
+      const model = this.stockFactory.createStockPrice({
+        symbol: item.symbol,
+        ltp: Number(item.ltp),
+        ltv: Number(item.ltv),
+        pointChange: Number(item.point_change),
+        percentageChange: Number(item.percentage_change),
+        open: Number(item.open),
+        high: Number(item.high),
+        low: Number(item.low),
+        volume: Number(item.volume),
+        date: new Date(item.date),
+      });
+
+      return { ...model };
+    });
+
+    // 5️⃣ Insert batch
+    await this.dataServices.stockPrice.createBulk(stockPriceObjects);
+
+    console.log(
+      `Inserted page ${page + 1}/${totalPages} — records: ${stockPriceObjects.length}`,
+    );
+  }
+
+  return {
+    message: 'Stock prices inserted successfully in batches',
+    totalRecords,
+  };
+}
+
+
   async getAllStockInfo() {
     return await this.dataServices.stockInfo.getAllWithoutPagination();
   }
@@ -180,7 +255,6 @@ export class StockUseCaseService {
       data,
       dto.options || {}
     );
-
     return result;
   }
 

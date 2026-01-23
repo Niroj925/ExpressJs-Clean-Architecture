@@ -16,8 +16,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             201,
-            "listed stock created successfully"
-          )
+            "listed stock created successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -33,8 +33,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "listed stock created successfully"
-          )
+            "listed stock created successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -51,8 +51,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "All stock prices fetched successfully"
-          )
+            "All stock prices fetched successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -62,7 +62,7 @@ export class StockController {
   async getStockPriceWithPagination(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const page = Number(req.query.page) || 1;
@@ -70,7 +70,7 @@ export class StockController {
 
       const stock = await this.stockService.getStockPriceWithPagination(
         page,
-        limit
+        limit,
       );
 
       return res
@@ -79,8 +79,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "Paginated stock prices fetched successfully"
-          )
+            "Paginated stock prices fetched successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -105,8 +105,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "Stock prices fetched by date successfully"
-          )
+            "Stock prices fetched by date successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -131,8 +131,8 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "Stock price fetched by symbol successfully"
-          )
+            "Stock price fetched by symbol successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -155,28 +155,37 @@ export class StockController {
       return res
         .status(200)
         .json(
-          CoreApiResponse.success(stock, 200, `Latest ${days} days fetched`)
+          CoreApiResponse.success(stock, 200, `Latest ${days} days fetched`),
         );
     } catch (err) {
       return next(err);
     }
   }
 
-   async getIndicatorBasedResult(req: Request, res: Response, next: NextFunction) {
-  try {
-    const dto = Object.assign(new IndicatorRequestDto(), req.body);
-    // await validateOrReject(dto); 
+  async getIndicatorBasedResult(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const dto = Object.assign(new IndicatorRequestDto(), req.body);
+      // await validateOrReject(dto);
 
-    const stock = await this.stockService.getIndicatorBasedResult(dto);
+      const stock = await this.stockService.getIndicatorBasedResult(dto);
 
-    return res.status(200).json(
-      CoreApiResponse.success(stock, 200, `Indicator based result fetched successfully`)
-    );
-
-  } catch (err) {
-    return next(err);
+      return res
+        .status(200)
+        .json(
+          CoreApiResponse.success(
+            stock,
+            200,
+            `Indicator based result fetched successfully`,
+          ),
+        );
+    } catch (err) {
+      return next(err);
+    }
   }
-}
 
   async insertStockPrice(req: Request, res: Response, next: NextFunction) {
     try {
@@ -187,8 +196,28 @@ export class StockController {
           CoreApiResponse.success(
             stock,
             200,
-            "stock price inserted successfully"
-          )
+            "stock price inserted successfully",
+          ),
+        );
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  async insertStockAfterDate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const date = String(req.query.date);
+      const start = String(req.query?.start);
+      const end = String(req.query?.end);
+      const stock = await this.stockService.insertStockAfterDate(date,start,end);
+      return res
+        .status(201)
+        .json(
+          CoreApiResponse.success(
+            stock,
+            200,
+            "stock price after date inserted successfully",
+          ),
         );
     } catch (err) {
       return next(err);
@@ -202,7 +231,7 @@ export class StockController {
       return res
         .status(200)
         .json(
-          CoreApiResponse.success(result, 200, `Deleted stock price older`)
+          CoreApiResponse.success(result, 200, `Deleted stock price older`),
         );
     } catch (err) {
       next(err);
