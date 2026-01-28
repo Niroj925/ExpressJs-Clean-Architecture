@@ -29,7 +29,8 @@ export abstract class BaseStrategy implements IStrategy {
   }
 
   protected async getStockData(ticker: string): Promise<any[]> {
-    return this.stockService.getStockBySymbol(capitalize(ticker));
+    const { data } = await this.stockService.getStockBySymbol(capitalize(ticker));
+    return data;
   }
 
   protected async calculateIndicator(

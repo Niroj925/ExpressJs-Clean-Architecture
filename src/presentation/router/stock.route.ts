@@ -173,22 +173,16 @@ export const createStockRouter = () => {
     asyncHandler(controller.insertStockPrice.bind(controller)),
   );
 
-  /**
-   * @swagger
-   * /stock/insert-stock-price-after-date:
-   *   post:
-   *     summary: insert stock price after date
-   *     tags: [Stock]
-   *     parameters:
-   *       - in: query
-   *         name: date
-   *         required: true
-   *         schema:
-   *           type: string
-   *     responses:
-   *       200:
-   *         description:  all stock price after date inserted
-   */
+/**
+ * @swagger
+ * /stock/insert-stock-price-after-date:
+ *   post:
+ *     summary: Insert stock price after date
+ *     tags: [Stock]
+ *     responses:
+ *       200:
+ *         description: All stock prices after date inserted
+ */
   router.post(
     "/insert-stock-price-after-date",
     asyncHandler(controller.insertStockAfterDate.bind(controller)),
@@ -207,6 +201,21 @@ export const createStockRouter = () => {
   router.delete(
     "/delete-before-date",
     asyncHandler(controller.deleteOldStockPrice.bind(controller)),
+  );
+
+   /**
+   * @swagger
+   * /stock/remove-duplicate-stock-by-date:
+   *   delete:
+   *     summary: Remove duplicate stock prices by date
+   *     tags: [Stock]
+   *     responses:
+   *       200:
+   *         description: Duplicate stock records removed successfully
+   */
+  router.delete(
+    "/remove-duplicate-stock-by-date",
+    asyncHandler(controller.removeDuplicateStockByDate.bind(controller)),
   );
 
   /**

@@ -206,10 +206,7 @@ export class StockController {
 
   async insertStockAfterDate(req: Request, res: Response, next: NextFunction) {
     try {
-      const date = String(req.query.date);
-      const start = String(req.query?.start);
-      const end = String(req.query?.end);
-      const stock = await this.stockService.insertStockAfterDate(date,start,end);
+      const stock = await this.stockService.insertStockAfterDate();
       return res
         .status(201)
         .json(
@@ -235,6 +232,24 @@ export class StockController {
         );
     } catch (err) {
       next(err);
+    }
+  }
+
+    async removeDuplicateStockByDate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stock = await this.stockService.removeDuplicateStockByDate();
+
+      return res
+        .status(200)
+        .json(
+          CoreApiResponse.success(
+            stock,
+            200,
+            "duplicate stock removed by date successfully",
+          ),
+        );
+    } catch (err) {
+      return next(err);
     }
   }
 }

@@ -10,19 +10,19 @@ import {
 } from "presentation/dto/request/stock.dto";
 import StockPriceModel from "core/models/stock-price.model";
 import { capitalize } from "common/utils/capitalize";
-import { LessThan } from "typeorm";
 import { calculateIndicatorFromHistory } from "common/utils/getIndicatorResult";
 import { IndicatorOptionsMap } from "common/interface/indicator.interface";
+import { LessThan, MoreThan } from "typeorm";
 export class StockUseCaseService {
   constructor(
     private readonly dataServices: IDataServices,
     private readonly stockFactory: StockFactory,
-    private readonly configService: IConfigService
+    private readonly configService: IConfigService,
   ) {}
 
   async createListedStock() {
     const { data } = await axios.get(
-      this.configService.get("STOCK_API_ENDPOINT")
+      this.configService.get("STOCK_API_ENDPOINT"),
     );
 
     const stockModels: StockInfoModel[] = data.data.map((item: any) => {
@@ -66,7 +66,7 @@ export class StockUseCaseService {
 
       // 2️⃣ Fetch a page of stock prices
       const { data: rows } = await axios.get(
-        `http://localhost:4000/stock/pagination?start=${start}&end=${end}`
+        `http://localhost:4000/stock/pagination?start=${start}&end=${end}`,
       );
       console.log(rows);
       // 3️⃣ Convert API → DTO → Model → plain object
@@ -93,7 +93,7 @@ export class StockUseCaseService {
       console.log(
         `Inserted page ${page + 1}/${totalPages}, records: ${
           stockPriceObjects.length
-        }`
+        }`,
       );
     }
 
@@ -103,80 +103,69 @@ export class StockUseCaseService {
     };
   }
 
- async insertStockAfterDate(dateString: string,start:string,end:string) {
+  async insertStockAfterDate() {
   const PAGE_SIZE = 100;
 
-  const date = new Date(dateString);
-  date.setHours(0, 0, 0, 0);
+  try {
+    const { data: latestDocs } =
+      await this.dataServices.stockPrice.getAll({}, {}, { date: "DESC" }, {}, 1);
 
-  console.log('Start date:', date);
+    let lastDate = new Date(latestDocs[0].date);
+    let lastId: string | null = null;
 
-  // 1️⃣ Get total records count
-  const { data: countData } = await axios.get(
-    `http://localhost:4000/stock/count-stock-after-date?date=${dateString}&start=${start}&end=${end}`,
-  );
+    console.log("Inserting stock prices after:", lastDate);
 
-  const totalRecords = countData.total;
-  const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
+    let totalInserted = 0;
 
-  console.log(`Total records: ${totalRecords}, Total pages: ${totalPages}`);
-
-  // 2️⃣ Loop page by page
-  for (let page = 0; page < totalPages; page++) {
-    const start = page * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-
-    // 3️⃣ Fetch batch
-    const { data } = await axios.get(
-      `http://localhost:4000/stock/stock-after-date`,
-      {
-        params: {
-          date: dateString,
-          start,
-          end,
+    while (true) {
+      const { data } = await axios.get(
+        "http://localhost:4000/stock/stock-after-date",
+        {
+          params: {
+            date: lastDate.toISOString(),
+            lastId,
+            limit: PAGE_SIZE,
+          },
         },
-      },
-    );
+      );
 
-    const rows = data.data;
+      if (!data?.length) break;
 
-    if (!rows || rows.length === 0) {
-      console.log('No more records');
-      break;
+      const stockPriceObjects = data.map((item: any) =>
+        this.stockFactory.createStockPrice({
+          symbol: item.symbol,
+          ltp: Number(item.ltp),
+          ltv: Number(item.ltv),
+          pointChange: Number(item.point_change),
+          percentageChange: Number(item.percentage_change),
+          open: Number(item.open),
+          high: Number(item.high),
+          low: Number(item.low),
+          volume: Number(item.volume),
+          date: new Date(item.date),
+        }),
+      );
+
+      await this.dataServices.stockPrice.createBulk(stockPriceObjects);
+
+      const lastRecord: any = data[data.length - 1];
+      lastDate = new Date(lastRecord.date);
+      lastId = lastRecord.id;
+
+      totalInserted += data.length;
+
+      console.log(`✓ Inserted ${totalInserted} records`);
     }
 
-    // 4️⃣ Convert
-    const stockPriceObjects = rows.map((item: any) => {
-      const model = this.stockFactory.createStockPrice({
-        symbol: item.symbol,
-        ltp: Number(item.ltp),
-        ltv: Number(item.ltv),
-        pointChange: Number(item.point_change),
-        percentageChange: Number(item.percentage_change),
-        open: Number(item.open),
-        high: Number(item.high),
-        low: Number(item.low),
-        volume: Number(item.volume),
-        date: new Date(item.date),
-      });
-
-      return { ...model };
-    });
-
-    // 5️⃣ Insert batch
-    await this.dataServices.stockPrice.createBulk(stockPriceObjects);
-
-    console.log(
-      `Inserted page ${page + 1}/${totalPages} — records: ${stockPriceObjects.length}`,
-    );
+    return {
+      message: "Stock inserted successfully",
+      totalInserted,
+    };
+  } catch (error) {
+    console.error("Insert failed:", error);
+    throw error;
   }
-
-  return {
-    message: 'Stock prices inserted successfully in batches',
-    totalRecords,
-  };
 }
-
 
   async getAllStockInfo() {
     return await this.dataServices.stockInfo.getAllWithoutPagination();
@@ -193,7 +182,7 @@ export class StockUseCaseService {
       {},
       {},
       page,
-      limit
+      limit,
     );
   }
 
@@ -202,9 +191,15 @@ export class StockUseCaseService {
   }
 
   async getStockBySymbol(symbol: string) {
-    return await this.dataServices.stockPrice.getAllWithoutPagination({
-      symbol: capitalize(symbol),
-    });
+    // await this.dataServices.stockPrice.delete({ date:'2026-01-26' });
+    const data = await this.dataServices.stockPrice.getAllWithoutPagination(
+      {
+        symbol: capitalize(symbol),
+      },
+      {},
+      { date: "ASC" },
+    );
+    return { data, count: data.length };
   }
 
   async getStockPriceDays(symbol: string, days: number) {
@@ -214,7 +209,7 @@ export class StockUseCaseService {
       { date: "DESC" },
       {},
       1,
-      days
+      days,
     );
   }
 
@@ -240,7 +235,7 @@ export class StockUseCaseService {
         {},
         {},
         page,
-        limit
+        limit,
       );
     }
 
@@ -248,22 +243,28 @@ export class StockUseCaseService {
   }
 
   async getIndicatorBasedResult(dto: IndicatorRequestDto) {
-    const data = await this.getStockBySymbol(capitalize(dto.symbol));
+    const { data } = await this.getStockBySymbol(capitalize(dto.symbol));
 
     const result = await calculateIndicatorFromHistory(
       capitalize(dto.indicator) as keyof IndicatorOptionsMap,
       data,
-      dto.options || {}
+      dto.options || {},
     );
     return result;
   }
 
   async deleteStockPriceBefore() {
-    const cutoff = new Date("2025-01-01");
+    const cutoff = new Date("2026-01-07");
 
     return await this.dataServices.stockPrice.delete({
-      date: LessThan(cutoff),
+      // date: LessThan(cutoff),//before date delete
+      date: MoreThan(cutoff),//after date delete
     });
+  }
+
+    async removeDuplicateStockByDate() {
+      const date = new Date("2026-01-12");
+    return await this.dataServices.stockPrice.getAllWithoutPagination({ date });
   }
 
   async upsertStock(stock: StockInfoModel) {
